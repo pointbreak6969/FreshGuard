@@ -1,0 +1,3 @@
+backend/yolo11x.pt
+backend/yolov8m.pt
+backend/.venv/
