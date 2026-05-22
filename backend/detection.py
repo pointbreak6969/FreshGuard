@@ -16,7 +16,7 @@ from ultralytics import YOLO
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
-MODEL_NAME   = "runs/train/lvis_finetune/weights/best.pt"
+MODEL_NAME   = "models/best.pt"
 UPLOAD_DIR   = Path("uploads")
 CROP_SIZE    = 640                   # each saved crop is resized to 640×640
 CONF_THRESH  = 0.30                  # minimum confidence to keep a detection

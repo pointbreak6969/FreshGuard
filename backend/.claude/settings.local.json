@@ -3,7 +3,13 @@
     "allow": [
       "Bash(pip uninstall *)",
       "Bash(python *)",
-      "Bash(del _gen_notebook.py)"
+      "Bash(del _gen_notebook.py)",
+      "Bash(git -C \"C:\\\\coding\\\\FreshGuard\\\\backend\" ls-files)",
+      "Bash(Select-String -Pattern \"\\\\.\\(pt|pth|onnx|h5|pkl|bin|weights\\)$\")",
+      "PowerShell(git *)",
+      "PowerShell(git filter-repo *)",
+      "PowerShell(pip install *)",
+      "Bash(git rm *)"
     ]
   }
 }

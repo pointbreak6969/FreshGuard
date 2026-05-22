@@ -4,8 +4,7 @@ __pycache__/
 .cache/
 .venv/
 uploads/
+runs/train/cnn_finetune/checkpoints/
+runs/train/cnn_finetune/checkpoints_backup/
+runs/train/lvis_finetune/weights/
 
-# Model checkpoints over 100MB (GitHub limit)
-runs/train/lvis_finetune/weights/epoch*.pt
-runs/train/cnn_finetune/checkpoints/resnet50_checkpoint.pth
-runs/train/cnn_finetune/checkpoints_backup/resnet50_checkpoint.pth
