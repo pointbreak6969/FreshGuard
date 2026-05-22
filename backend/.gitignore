@@ -4,7 +4,5 @@ __pycache__/
 .cache/
 .venv/
 uploads/
-runs/train/cnn_finetune/checkpoints/
-runs/train/cnn_finetune/checkpoints_backup/
-runs/train/lvis_finetune/weights/
+runs/train
 
