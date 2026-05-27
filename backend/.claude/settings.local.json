@@ -9,7 +9,8 @@
       "PowerShell(git *)",
       "PowerShell(git filter-repo *)",
       "PowerShell(pip install *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(git remote *)"
     ]
   }
 }

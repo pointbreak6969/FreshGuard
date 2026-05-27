@@ -18,7 +18,7 @@ from ultralytics import YOLO
 
 MODEL_NAME   = "models/best.pt"
 UPLOAD_DIR   = Path("uploads")
-CROP_SIZE    = 640                   # each saved crop is resized to 640×640
+CROP_SIZE    = 480                # each saved crop is resized to 480×480
 CONF_THRESH  = 0.30                  # minimum confidence to keep a detection
 
 # All 63 classes from the fine-tuned LVIS model (matches data.yaml names exactly)
@@ -119,6 +119,65 @@ def crop_and_save(img_bgr: np.ndarray, x1, y1, x2, y2,
     return save_path
 
 
+def annotated_output_path(folder: Path, output_base: str | Path | None) -> Path:
+    if not output_base:
+        return folder / "annotated_result.jpg"
+
+    base = Path(output_base)
+    if base.suffix:
+        base = base.with_suffix("")
+    return base.parent / f"{base.name}_annotated.jpg"
+
+
+def detect(
+    pil_img: Image.Image,
+    output_base: str | Path | None = None,
+) -> tuple[list[dict], Path]:
+    """Run detection on a PIL image and return detections and annotated path.
+
+    Each detection is a dict with: label, confidence, path.
+    """
+    pil_img = pil_img.convert("RGB")
+    img_rgb = np.array(pil_img)
+    img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+    h, w = img_bgr.shape[:2]
+
+    model = YOLO(MODEL_NAME)
+    results = model(img_bgr, conf=CONF_THRESH, verbose=False)[0]
+
+    annotated = img_bgr.copy()
+    folder = make_upload_dir()
+    detections = []
+
+    for i, box in enumerate(results.boxes):
+        cls_id = int(box.cls[0])
+        label = model.names[cls_id]
+        conf = float(box.conf[0])
+
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+
+        if not is_produce(label):
+            continue
+
+        color = BOX_COLORS[i % len(BOX_COLORS)]
+        draw_box(annotated, x1, y1, x2, y2, label, conf, color)
+
+        save_path = crop_and_save(img_bgr, x1, y1, x2, y2, label, folder)
+        if save_path:
+            detections.append({
+                "label": label,
+                "confidence": conf,
+                "path": str(save_path),
+            })
+
+    ann_path = annotated_output_path(folder, output_base)
+    cv2.imwrite(str(ann_path), annotated)
+
+    return detections, ann_path
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -130,24 +189,21 @@ def main():
     if not source:
         sys.exit("[ERROR] No input provided.")
 
-    # 1. Load image
     print("\n[1/4] Loading image …")
     img_bgr = load_image(source)
-    h, w    = img_bgr.shape[:2]
+    h, w = img_bgr.shape[:2]
     print(f"      Resolution: {w} × {h} px")
 
-    # 2. Load / download model
     print(f"\n[2/4] Loading model ({MODEL_NAME}) …")
-    model = YOLO(MODEL_NAME)          # auto-downloads on first use
+    model = YOLO(MODEL_NAME)
 
-    # 3. Run inference
     print("\n[3/4] Running inference …")
     results = model(img_bgr, conf=CONF_THRESH, verbose=False)[0]
 
     annotated = img_bgr.copy()
-    folder    = make_upload_dir()
-    saved     = []
-    skipped   = 0
+    folder = make_upload_dir()
+    saved = []
+    skipped = 0
 
     print("\n[4/4] Processing detections …\n")
     print(f"  {'Label':<20} {'Conf':>6}   Box (x1,y1,x2,y2)")
@@ -155,11 +211,10 @@ def main():
 
     for i, box in enumerate(results.boxes):
         cls_id = int(box.cls[0])
-        label  = model.names[cls_id]
-        conf   = float(box.conf[0])
+        label = model.names[cls_id]
+        conf = float(box.conf[0])
 
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-        # Clamp to image bounds
         x1, y1 = max(0, x1), max(0, y1)
         x2, y2 = min(w, x2), min(h, y2)
 
@@ -176,17 +231,14 @@ def main():
             print(f"  {label:<20} {conf:>5.1%}   ({x1},{y1}) → ({x2},{y2})")
             print(f"  {'':20}          → saved: {save_path}")
 
-    # 4. Show annotated image
     window_title = "Fruit & Vegetable Detection  [press any key to close]"
     cv2.imshow(window_title, annotated)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    # Also save the full annotated image
     ann_path = folder / "annotated_result.jpg"
     cv2.imwrite(str(ann_path), annotated)
 
-    # Summary
     print("\n" + "=" * 58)
     print(f"  Detections kept  : {len(saved)}")
     print(f"  Non-produce skip : {skipped}")
@@ -201,3 +253,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

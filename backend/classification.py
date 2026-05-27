@@ -77,9 +77,9 @@ def classify_image(
     return class_names[idx.item()], conf.item()
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
 
-def main():
+
+def get_classified_result():
     print("=" * 58)
     print("   FreshGuard Classifier  (ResNet50)")
     print("=" * 58)
@@ -118,4 +118,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    get_classified_result()

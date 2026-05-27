@@ -3,6 +3,9 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 import requests, io, os, uuid
 from detection import detect
+from classification import get_classified_result
+
+
 
 app = FastAPI()
 UPLOAD_DIR = "uploads"
@@ -24,6 +27,11 @@ async def detect_endpoint(file: UploadFile = File(None), url: str = Form(None)):
     original_path = os.path.join(UPLOAD_DIR, f"{image_id}.jpg")
     image.save(original_path)
 
-    detections = detect(image, os.path.join(UPLOAD_DIR, image_id))
+    detections, annotated_path = detect(image, os.path.join(UPLOAD_DIR, image_id))
+
+    if os.path.exists(original_path):
+        os.remove(original_path)
+    if os.path.exists(annotated_path):
+        os.remove(annotated_path)
 
     return JSONResponse({"image_id": image_id, "original": original_path, "detections": detections})
