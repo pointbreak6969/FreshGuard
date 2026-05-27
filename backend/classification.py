@@ -8,7 +8,6 @@ Can also be imported and used directly:
 """
 
 import json
-import sys
 from pathlib import Path
 
 import torch
@@ -53,8 +52,7 @@ def load_classifier(device: torch.device):
 
 def get_transform() -> transforms.Compose:
     return transforms.Compose([
-        transforms.Resize(RESIZE_SIZE),
-        transforms.CenterCrop(RESIZE_SIZE),
+        transforms.Resize((RESIZE_SIZE, RESIZE_SIZE)),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
     ])
@@ -79,43 +77,37 @@ def classify_image(
 
 
 
-def get_classified_result():
-    print("=" * 58)
-    print("   FreshGuard Classifier  (ResNet50)")
-    print("=" * 58)
+def get_classified_result(crop_paths: list[str | Path]) -> list[dict]:
+    """Classify a list of crop file paths.
+
+    Args:
+        crop_paths: list of file paths (str or Path) to cropped images.
+
+    Returns:
+        list of dicts with keys: file, label, confidence.
+    """
+    if not crop_paths:
+        return []
 
     if not WEIGHTS_PATH.exists():
-        sys.exit(f"[ERROR] Model weights not found at {WEIGHTS_PATH}\n"
-                 f"        Run save_model() in finetune1.ipynb first.")
+        raise FileNotFoundError(f"Model weights not found at {WEIGHTS_PATH}")
     if not CLASSES_PATH.exists():
-        sys.exit(f"[ERROR] Class names not found at {CLASSES_PATH}")
-
-    crops = [
-        p for p in sorted(UPLOADS_DIR.glob("*.jpg"))
-        if p.name != "annotated_result.jpg"
-    ]
-    if not crops:
-        sys.exit(f"[ERROR] No crops found in {UPLOADS_DIR}/\n"
-                 f"        Run detection.py first to generate crops.")
+        raise FileNotFoundError(f"Class names not found at {CLASSES_PATH}")
 
     device = get_device()
-    print(f"\n  Device  : {device}")
-    print(f"  Loading : {WEIGHTS_PATH}")
     model, class_names = load_classifier(device)
     transform = get_transform()
-    print(f"  Classes : {len(class_names)}")
-    print(f"  Crops   : {len(crops)}\n")
 
-    print(f"  {'File':<30} {'Predicted Class':<25} {'Confidence':>10}")
-    print("  " + "-" * 67)
-
-    for crop_path in crops:
+    results = []
+    for crop_path in crop_paths:
         img = Image.open(crop_path).convert("RGB")
         label, conf = classify_image(img, model, class_names, transform, device)
-        print(f"  {crop_path.name:<30} {label:<25} {conf:>9.1%}")
+        results.append({
+            "file":       str(crop_path),
+            "label":      label,
+            "confidence": conf,
+        })
 
-    print("\n" + "=" * 58)
+    return results
 
 
-if __name__ == "__main__":
-    get_classified_result()

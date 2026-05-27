@@ -29,9 +29,14 @@ async def detect_endpoint(file: UploadFile = File(None), url: str = Form(None)):
 
     detections, annotated_path = detect(image, os.path.join(UPLOAD_DIR, image_id))
 
-    if os.path.exists(original_path):
-        os.remove(original_path)
-    if os.path.exists(annotated_path):
-        os.remove(annotated_path)
+    crop_paths = [d["path"] for d in detections]
+    classifications = get_classified_result(crop_paths)
 
-    return JSONResponse({"image_id": image_id, "original": original_path, "detections": detections})
+    for path in [original_path, str(annotated_path), *crop_paths]:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+    return JSONResponse({"image_id": image_id, "results": classifications})
+
