@@ -99,6 +99,56 @@ def crop_and_save(img_bgr: np.ndarray, x1, y1, x2, y2,
     return save_path
 
 
+# ── API entry-point ──────────────────────────────────────────────────────────
+
+def detect(image: Image.Image, save_prefix: str) -> list[dict]:
+    """
+    Run detection on a PIL RGB image.
+    Saves each crop as <save_prefix>_<label>_<n>.jpg.
+    Returns a list of dicts: {label, confidence, box, crop_path}.
+    """
+    model = YOLO(MODEL_NAME)
+    img_bgr = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    h, w = img_bgr.shape[:2]
+
+    import torch
+    if torch.cuda.is_available():
+        major, minor = torch.cuda.get_device_capability()
+        device = "cuda" if major * 10 + minor >= 75 else "cpu"
+    else:
+        device = "cpu"
+    results = model(img_bgr, conf=CONF_THRESH, verbose=False, device=device)[0]
+
+    folder = Path(save_prefix).parent
+    folder.mkdir(parents=True, exist_ok=True)
+    stem = Path(save_prefix).name
+
+    detections = []
+    for i, box in enumerate(results.boxes):
+        cls_id = int(box.cls[0])
+        label  = model.names[cls_id]
+        conf   = float(box.conf[0])
+
+        if not is_produce(label):
+            continue
+
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+
+        crop_path = unique_path(folder, f"{stem}_{label.lower().replace(' ', '_')}")
+        saved = crop_and_save(img_bgr, x1, y1, x2, y2, label, folder)
+
+        detections.append({
+            "label":      label,
+            "confidence": round(conf, 4),
+            "box":        {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
+            "crop_path":  str(saved) if saved else None,
+        })
+
+    return detections
+
+
 def annotated_output_path(folder: Path, output_base: str | Path | None) -> Path:
     if not output_base:
         return folder / "annotated_result.jpg"

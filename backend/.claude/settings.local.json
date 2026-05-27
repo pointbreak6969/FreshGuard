@@ -10,7 +10,12 @@
       "PowerShell(git filter-repo *)",
       "PowerShell(pip install *)",
       "Bash(git rm *)",
+<<<<<<< HEAD
       "Bash(git remote *)"
+=======
+      "Bash(/home/biraj/coding/FreshGuard/backend/venv/bin/pip list *)",
+      "Bash(/home/biraj/coding/FreshGuard/backend/venv/bin/pip install *)"
+>>>>>>> a9c7dd8869e8cbe654b081c90385620c14c5ccd0
     ]
   }
 }
