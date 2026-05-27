@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FreshGuard - Fruit & Vegetable Detection",
-  description: "Detect fruits and vegetables from your photos",
+  title: "FreshGuard",
+  description: "A simple app to manage your fresh produce.",
 };
 
 export default function RootLayout({
