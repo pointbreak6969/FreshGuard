@@ -6,6 +6,7 @@ __pycache__/
 uploads/
 runs/train/cnn_finetune/checkpoints/*
 runs/train/cnn_finetune/checkpoints_backup/*
-runs/train/lvis_finetune/*
+runs/train/lvis_finetune/weights/*
+
 
 
